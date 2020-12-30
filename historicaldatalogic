@@ -1,0 +1,14 @@
+index=_internal sourcetype=splunkd_ui_access 
+| eval a="$ct.earliest$", b="$ct.latest$" 
+| eval earliest=((if(isnum(a),a,relative_time(now(),a)))-604800),latest=((if(isnum(b),b ,relative_time(now(),if(b="now","-0",b))))-604800) 
+| table earliest,latest,_time 
+| where '_time' >= earliest AND '_time' <=latest 
+| stats count as lastoneweek 
+| appendcols 
+    [| search index=_internal sourcetype=splunkd_ui_access 
+    | eval a="$ct.earliest$", b="$ct.latest$" 
+    | eval earliest=((if(isnum(a),a,relative_time(now(),a)))-1209600),latest=((if(isnum(b),b ,relative_time(now(),if(b="now","-0",b))))-1209600) 
+    | table earliest,latest,_time 
+    | where '_time' >= earliest AND '_time' <=latest 
+    | stats count as lasttwoweek ] 
+| eval historical=(lastoneweek+lasttwoweek)/2
